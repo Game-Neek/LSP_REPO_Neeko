@@ -14,4 +14,6 @@ public class Main {
         }
         
     }
+    //Overloading makes sense here because for all of them we want the area and we change the parameters that can be accepted so that the code functions. 
+    //This is better than changing the name and having to call a new name everytime.
 }
