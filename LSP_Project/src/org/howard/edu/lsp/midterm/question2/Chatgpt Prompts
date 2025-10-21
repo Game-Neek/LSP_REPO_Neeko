@@ -1,0 +1,111 @@
+These are the requirements I need you to complete: Write a class AreaCalculator in the package org.howard.edu.lsp.midterm.question2 with the following overloaded methods:  This should be uploaded to your repo.
+
+// Circle area
+public static double area(double radius)
+
+// Rectangle area
+public static double area(double width, double height)
+
+// Triangle (base & height) area
+public static double area(int base, int height)
+
+// Square (side length) area
+public static double area(int side)
+
+Requirements:
+Each method should compute and return the correct area.
+•	Circle area: π (use class Math.PI) × r²
+•	Rectangle area: width × height
+•	Triangle area: ½ × base × height
+•	Square area: side²
+•	For all methods: throw an IllegalArgumentException if any dimension is ≤ 0.
+ChatGPT said:
+
+Here’s the Java implementation you can upload to your repo:
+
+package org.howard.edu.lsp.midterm.question2;
+
+public class AreaCalculator {
+
+    // Circle area
+    public static double area(double radius) {
+        if (radius <= 0) {
+            throw new IllegalArgumentException("Radius must be greater than 0.");
+        }
+        return Math.PI * radius * radius;
+    }
+
+    // Rectangle area
+    public static double area(double width, double height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Width and height must be greater than 0.");
+        }
+        return width * height;
+    }
+
+    // Triangle area
+    public static double area(int base, int height) {
+        if (base <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Base and height must be greater than 0.");
+        }
+        return 0.5 * base * height;
+    }
+
+    // Square area
+    public static double area(int side) {
+        if (side <= 0) {
+            throw new IllegalArgumentException("Side length must be greater than 0.");
+        }
+        return side * side;
+    }
+}
+
+
+✅ Explanation:
+
+Each method checks for invalid (≤ 0) dimensions and throws IllegalArgumentException.
+
+Circle uses Math.PI * r².
+
+Rectangle is width × height.
+
+Triangle uses ½ × base × height.
+
+Square is side².
+
+All methods are static for direct use without object instantiation.
+
+Would you like me to include a quick JUnit test class for this (AreaCalculatorTest.java) to verify each method automatically?
+
+
+Create a class named Main that invokes each overloaded method statically to produce exactly the following output:
+
+Circle radius 3.0 → area = 28.274333882308138
+Rectangle 5.0 x 2.0 → area = 10.0
+Triangle base 10, height 6 → area = 30.0
+Square side 4 → area = 16.0
+ChatGPT said:
+
+Here’s the Main class that calls each of the overloaded methods in your AreaCalculator class and produces exactly the specified output:
+
+package org.howard.edu.lsp.midterm.question2;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Circle radius 3.0 → area = " + AreaCalculator.area(3.0));
+        System.out.println("Rectangle 5.0 x 2.0 → area = " + AreaCalculator.area(5.0, 2.0));
+        System.out.println("Triangle base 10, height 6 → area = " + AreaCalculator.area(10, 6));
+        System.out.println("Square side 4 → area = " + AreaCalculator.area(4));
+    }
+}
+
+
+✅ Expected Console Output:
+
+Circle radius 3.0 → area = 28.274333882308138
+Rectangle 5.0 x 2.0 → area = 10.0
+Triangle base 10, height 6 → area = 30.0
+Square side 4 → area = 16.0
+
+
+You can place this file in the same package as your AreaCalculator (org.howard.edu.lsp.midterm.question2) so it compiles and runs together.
