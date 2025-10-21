@@ -1,0 +1,461 @@
+Hey these are the implementations that I will be starting for question 4: 1) Abstract Base Class — Device
+The following Device class is partially implemented for you.
+You must not modify this code, but you will use it in your subclasses:
+
+
+package org.howard.edu.lsp.midterm.question4;
+
+public abstract class Device {
+  private String id;
+  private String location;
+  private long lastHeartbeatEpochSeconds;
+  private boolean connected;
+
+  // PROVIDED CONSTRUCTOR
+  public Device(String id, String location) {
+    if (id == null || id.isEmpty() || location == null || location.isEmpty()) {
+      throw new IllegalArgumentException("Invalid id or location");
+    }
+    this.id = id;
+    this.location = location;
+    this.lastHeartbeatEpochSeconds = 0;
+    this.connected = false;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getLocation() {
+    return location;
+  }
+
+
+
+  public long getLastHeartbeatEpochSeconds() {
+    return lastHeartbeatEpochSeconds;
+  }
+
+  public boolean isConnected() {
+    return connected;
+  }
+
+  protected void setConnected(boolean connected) {
+    this.connected = connected;
+  }
+
+  public void heartbeat() {
+    this.lastHeartbeatEpochSeconds = System.currentTimeMillis() / 1000;
+  }
+
+  public abstract String getStatus();
+}
+ChatGPT said:
+Thought for 6s
+
+Nice—since you can’t change Device, here are plug-and-play subclass templates you can drop in under org.howard.edu.lsp.midterm.question4. They show how to (1) add device-specific state/behavior, (2) flip connectivity via the provided setConnected(...), (3) update heartbeats, and (4) implement getStatus().
+
+package org.howard.edu.lsp.midterm.question4;
+
+/** Example actuator-type device */
+public class SmartBulb extends Device {
+    private boolean powerOn;
+    private int brightness; // 0–100
+
+    public SmartBulb(String id, String location) {
+        super(id, location);
+        this.powerOn = false;
+        this.brightness = 0;
+    }
+
+    public void connect()  { setConnected(true);  heartbeat(); }
+    public void disconnect(){ setConnected(false); }
+
+    public void turnOn()   { powerOn = true;  heartbeat(); }
+    public void turnOff()  { powerOn = false; heartbeat(); }
+
+    public void setBrightness(int level) {
+        if (level < 0 || level > 100) {
+            throw new IllegalArgumentException("Brightness must be 0–100");
+        }
+        this.brightness = level;
+        heartbeat();
+    }
+
+    @Override
+    public String getStatus() {
+        return String.format(
+            "SmartBulb[id=%s, loc=%s, connected=%s, power=%s, brightness=%d, lastHb=%d]",
+            getId(), getLocation(), isConnected(), powerOn ? "ON" : "OFF",
+            brightness, getLastHeartbeatEpochSeconds());
+    }
+}
+
+package org.howard.edu.lsp.midterm.question4;
+
+/** Example sensor-type device */
+public class TemperatureSensor extends Device {
+    private Double lastReadingC;  // nullable until first read
+
+    public TemperatureSensor(String id, String location) {
+        super(id, location);
+    }
+
+    public void connect()   { setConnected(true);  heartbeat(); }
+    public void disconnect(){ setConnected(false); }
+
+    public void record(double celsius) {
+        this.lastReadingC = celsius;
+        heartbeat();
+    }
+
+    @Override
+    public String getStatus() {
+        String reading = (lastReadingC == null) ? "n/a" : String.format("%.2f°C", lastReadingC);
+        return String.format(
+            "TemperatureSensor[id=%s, loc=%s, connected=%s, lastReading=%s, lastHb=%d]",
+            getId(), getLocation(), isConnected(), reading, getLastHeartbeatEpochSeconds());
+    }
+}
+
+package org.howard.edu.lsp.midterm.question4;
+
+/** Example camera-type device */
+public class SecurityCamera extends Device {
+    private boolean recording;
+    private String resolution; // e.g., "1080p", "4K"
+
+    public SecurityCamera(String id, String location, String resolution) {
+        super(id, location);
+        if (resolution == null || resolution.isEmpty()) {
+            throw new IllegalArgumentException("Resolution required");
+        }
+        this.resolution = resolution;
+    }
+
+    public void connect()    { setConnected(true);  heartbeat(); }
+    public void disconnect() { setConnected(false); }
+
+    public void startRecording() { recording = true;  heartbeat(); }
+    public void stopRecording()  { recording = false; heartbeat(); }
+
+    @Override
+    public String getStatus() {
+        return String.format(
+            "SecurityCamera[id=%s, loc=%s, connected=%s, recording=%s, res=%s, lastHb=%d]",
+            getId(), getLocation(), isConnected(), recording, resolution, getLastHeartbeatEpochSeconds());
+    }
+}
+
+
+And a tiny driver to sanity-check:
+
+package org.howard.edu.lsp.midterm.question4;
+
+public class MainQ4 {
+    public static void main(String[] args) {
+        SmartBulb bulb = new SmartBulb("BULB-1", "Lab A");
+        bulb.connect();
+        bulb.turnOn();
+        bulb.setBrightness(80);
+        System.out.println(bulb.getStatus());
+
+        TemperatureSensor t = new TemperatureSensor("TMP-22", "Lab A");
+        t.connect();
+        t.record(21.7);
+        System.out.println(t.getStatus());
+
+        SecurityCamera cam = new SecurityCamera("CAM-9", "Entrance", "1080p");
+        cam.connect();
+        cam.startRecording();
+        System.out.println(cam.getStatus());
+    }
+}
+
+
+Feel free to swap names/fields to match your spec; the key pattern is: extend Device, manage connectivity via setConnected, call heartbeat() when state changes, and implement getStatus() to summarize state.
+
+
+
+Ok now with this information you will be making these classes with a proper explanation on needed to be done: You will extend this class in your DoorLock, Thermostat, and Camera implementations. All subclasses must call super(id, location) in their constructors. 2) Capability Interfaces (behaviors only) Networked void connect(); void disconnect(); boolean isConnected(); Behavior: • connect() brings the device online by setting connected = true. • disconnect() sets connected = false. • isConnected() reports the current connection state. (Concrete classes may satisfy this using Device’s protected setter and public getter.)
+ Concrete Devices (must extend Device and implement interfaces)
+All fields must be private. Implement methods exactly as specified.
+
+A)	DoorLock — extends Device, implements Networked, BatteryPowered
+Private fields
+
+private int batteryPercent;
+
+Constructor
+public DoorLock(String id, String location, int initialBattery)
+
+•	Call super(id, location).
+•	Initialize battery by calling setBatteryPercent(initialBattery) (enforces 0..100).
+
+
+Implemented methods
+
+// Networked
+@Override public void connect()    { setConnected(true);  }
+@Override public void disconnect() { setConnected(false); }
+@Override public boolean isConnected() { return super.isConnected(); }
+
+// BatteryPowered
+@Override public int getBatteryPercent() { return batteryPercent; }
+@Override public void setBatteryPercent(int percent) {
+  if (percent < 0 || percent > 100) throw new IllegalArgumentException("battery 0..100");
+  this.batteryPercent = percent;
+}
+
+// Status
+@Override public String getStatus() {
+  String connStatus = isConnected() ? "up" : "down";
+  return "DoorLock[id=" + getId() + ", loc=" + getLocation() +
+         ", conn=" + connStatus + ", batt=" + batteryPercent + "%]";
+}
+
+B) Thermostat — extends Device, implements Networked
+Private fields
+
+private double temperatureC;
+
+Constructor
+public Thermostat(String id, String location, double initialTempC)
+
+•	Call super(id, location).
+•	Initialize temperatureC to initialTempC.
+
+Accessors
+
+public double getTemperatureC();
+public void setTemperatureC(double temperatureC);
+
+Implemented methods
+
+// Networked
+@Override public void connect()    { setConnected(true);  }
+@Override public void disconnect() { setConnected(false); }
+@Override public boolean isConnected() { return super.isConnected(); }
+
+// Status
+@Override public String getStatus() {
+  String connStatus = isConnected() ? "up" : "down";
+  return "Thermostat[id=" + getId() + ", loc=" + getLocation() +
+         ", conn=" + connStatus + ", tempC=" + temperatureC + "]";
+}
+
+C) Camera — extends Device, implements Networked, BatteryPowered
+
+Private fields
+private int batteryPercent;
+
+Constructor
+
+public Camera(String id, String location, int initialBattery)
+
+•	Call super(id, location).
+•	Initialize battery by calling setBatteryPercent(initialBattery).
+
+
+
+
+Implemented methods
+
+// Networked
+@Override public void connect()    { setConnected(true);  }
+@Override public void disconnect() { setConnected(false); }
+@Override public boolean isConnected() { return super.isConnected(); }
+
+// BatteryPowered
+@Override public int getBatteryPercent() { return batteryPercent; }
+@Override public void setBatteryPercent(int percent) {
+  if (percent < 0 || percent > 100) throw new IllegalArgumentException("battery 0..100");
+  this.batteryPercent = percent;
+}
+
+// Status
+@Override public String getStatus() {
+  String connStatus = isConnected() ? "up" : "down";
+  return "Camera[id=" + getId() + ", loc=" + getLocation() +
+         ", conn=" + connStatus + ", batt=" + batteryPercent + "%]";
+}
+
+ChatGPT said:
+Thought for 10s
+
+Got it. Here’s what needs to be done—and it’s all implemented below so you can compile/run right away.
+
+What needs to be done
+
+Ensure the two capability interfaces exist in org.howard.edu.lsp.midterm.question4:
+
+Networked with connect(), disconnect(), isConnected().
+
+BatteryPowered with getBatteryPercent(), setBatteryPercent(int) (throws if outside 0..100).
+
+Implement three concrete devices that extend Device and implement the interfaces exactly as specified:
+
+DoorLock (Networked, BatteryPowered)
+
+Thermostat (Networked)
+
+Camera (Networked, BatteryPowered)
+
+All fields must be private, constructors must call super(id, location), and method bodies must match the spec.
+
+Files to add (or replace) under org.howard.edu.lsp.midterm.question4
+Networked.java
+package org.howard.edu.lsp.midterm.question4;
+
+public interface Networked {
+    void connect();
+    void disconnect();
+    boolean isConnected();
+}
+
+BatteryPowered.java
+package org.howard.edu.lsp.midterm.question4;
+
+public interface BatteryPowered {
+    int getBatteryPercent();
+    void setBatteryPercent(int percent);
+}
+
+DoorLock.java
+package org.howard.edu.lsp.midterm.question4;
+
+public class DoorLock extends Device implements Networked, BatteryPowered {
+    private int batteryPercent;
+
+    public DoorLock(String id, String location, int initialBattery) {
+        super(id, location);
+        setBatteryPercent(initialBattery); // enforces 0..100
+    }
+
+    // Networked
+    @Override
+    public void connect()    { setConnected(true);  }
+    @Override
+    public void disconnect() { setConnected(false); }
+    @Override
+    public boolean isConnected() { return super.isConnected(); }
+
+    // BatteryPowered
+    @Override
+    public int getBatteryPercent() { return batteryPercent; }
+
+    @Override
+    public void setBatteryPercent(int percent) {
+        if (percent < 0 || percent > 100) {
+            throw new IllegalArgumentException("battery 0..100");
+        }
+        this.batteryPercent = percent;
+    }
+
+    // Status
+    @Override
+    public String getStatus() {
+        String connStatus = isConnected() ? "up" : "down";
+        return "DoorLock[id=" + getId() + ", loc=" + getLocation() +
+               ", conn=" + connStatus + ", batt=" + batteryPercent + "%]";
+    }
+}
+
+Thermostat.java
+package org.howard.edu.lsp.midterm.question4;
+
+public class Thermostat extends Device implements Networked {
+    private double temperatureC;
+
+    public Thermostat(String id, String location, double initialTempC) {
+        super(id, location);
+        this.temperatureC = initialTempC;
+    }
+
+    public double getTemperatureC() {
+        return temperatureC;
+    }
+
+    public void setTemperatureC(double temperatureC) {
+        this.temperatureC = temperatureC;
+    }
+
+    // Networked
+    @Override
+    public void connect()    { setConnected(true);  }
+    @Override
+    public void disconnect() { setConnected(false); }
+    @Override
+    public boolean isConnected() { return super.isConnected(); }
+
+    // Status
+    @Override
+    public String getStatus() {
+        String connStatus = isConnected() ? "up" : "down";
+        return "Thermostat[id=" + getId() + ", loc=" + getLocation() +
+               ", conn=" + connStatus + ", tempC=" + temperatureC + "]";
+    }
+}
+
+Camera.java
+package org.howard.edu.lsp.midterm.question4;
+
+public class Camera extends Device implements Networked, BatteryPowered {
+    private int batteryPercent;
+
+    public Camera(String id, String location, int initialBattery) {
+        super(id, location);
+        setBatteryPercent(initialBattery); // enforces 0..100
+    }
+
+    // Networked
+    @Override
+    public void connect()    { setConnected(true);  }
+    @Override
+    public void disconnect() { setConnected(false); }
+    @Override
+    public boolean isConnected() { return super.isConnected(); }
+
+    // BatteryPowered
+    @Override
+    public int getBatteryPercent() { return batteryPercent; }
+
+    @Override
+    public void setBatteryPercent(int percent) {
+        if (percent < 0 || percent > 100) {
+            throw new IllegalArgumentException("battery 0..100");
+        }
+        this.batteryPercent = percent;
+    }
+
+    // Status
+    @Override
+    public String getStatus() {
+        String connStatus = isConnected() ? "up" : "down";
+        return "Camera[id=" + getId() + ", loc=" + getLocation() +
+               ", conn=" + connStatus + ", batt=" + batteryPercent + "%]";
+    }
+}
+
+(Optional) Tiny driver to sanity-check
+package org.howard.edu.lsp.midterm.question4;
+
+public class MainQ4 {
+    public static void main(String[] args) {
+        DoorLock lock = new DoorLock("DL-01", "Front Door", 85);
+        lock.connect();
+        System.out.println(lock.getStatus());
+
+        Thermostat t = new Thermostat("TH-02", "Hallway", 21.5);
+        t.connect();
+        t.setTemperatureC(22.0);
+        System.out.println(t.getStatus());
+
+        Camera cam = new Camera("CAM-03", "Backyard", 50);
+        cam.disconnect();
+        System.out.println(cam.getStatus());
+    }
+}
+
+
+That’s it—these classes match your spec exactly and will compile/run alongside the provided Device class.
